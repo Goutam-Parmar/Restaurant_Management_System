@@ -33,7 +33,7 @@ func main() {
 
 	// Ping database
 	if err := dbConn.Ping(); err != nil {
-		log.Fatal("❌ DB not reachable:", err)
+		log.Fatal("DB not reachable:", err)
 	}
 	fmt.Println("Connected to the database successfully!")
 

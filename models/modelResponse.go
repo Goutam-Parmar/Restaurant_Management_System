@@ -132,3 +132,14 @@ type AddMenuResponseSubAdmin struct {
 	MenuID         int64   `json:"menu_id"`
 	ResponseTimeMs float64 `json:"response_time_ms"`
 }
+type UserBrief2 struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+	City string `json:"city"`
+}
+
+type GetAllUsersResponse struct {
+	Message        string       `json:"message"`
+	Users2         []UserBrief2 `json:"users"`
+	ResponseTimeMs float64      `json:"response_time_ms"`
+}
