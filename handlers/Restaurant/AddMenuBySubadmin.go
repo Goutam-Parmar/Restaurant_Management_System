@@ -45,7 +45,7 @@ func AddMenuBySubadmin(db *sql.DB) http.HandlerFunc {
 			return
 		}
 		if count == 0 {
-			http.Error(w, "You are not allowed to modify this restaurant", http.StatusForbidden)
+			http.Error(w, "You are not allowed to modify this restaurant, you can only add menu which restorant belong to you", http.StatusForbidden)
 			return
 		}
 

@@ -21,7 +21,7 @@ func RefreshToken() http.HandlerFunc {
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 		token, claims, err := utils.ParseToken(tokenStr)
 		if err != nil || !token.Valid || !utils.IsTokenType(claims, "refresh") {
-			http.Error(w, "invalid or expired refresh token", http.StatusUnauthorized)
+			http.Error(w, "invalid or expired refresh token or ", http.StatusUnauthorized)
 			return
 		}
 

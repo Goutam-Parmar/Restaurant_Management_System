@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -12,6 +13,7 @@ type AuthClaims struct {
 }
 
 func ExtractAuthClaims(header string) (*AuthClaims, error) {
+	log.Println("ExtractAuthClaims step 3 ")
 	if header == "" || !strings.HasPrefix(header, "Bearer ") {
 		return nil, fmt.Errorf("missing or malformed Authorization header")
 	}

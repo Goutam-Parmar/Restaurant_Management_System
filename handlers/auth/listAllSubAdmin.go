@@ -14,19 +14,19 @@ func GetAllSubAdmins(db *sql.DB) http.HandlerFunc {
 
 		claims, err := utils.ExtractAuthClaims(r.Header.Get("Authorization"))
 		if err != nil || claims.Role != "admin" {
-			http.Error(w, "Unauthorized access", http.StatusUnauthorized)
+			http.Error(w, "Unauthorized access, only admin can acess", http.StatusUnauthorized)
 			return
 		}
 
 		rows, err := db.Query(`
-			SELECT 
+			 SELECT 
                      u.id, 
                      u.name, 
                      u.email, 
                      a.city
-          FROM users u
-    JOIN user_roles ur ON u.id = ur.user_id
-   JOIN addresses a ON u.id = a.user_id AND a.is_primary = true
+             FROM users u
+             JOIN user_roles ur ON u.id = ur.user_id
+             JOIN addresses a ON u.id = a.user_id AND a.is_primary = true
         WHERE ur.role = 'sub-admin';
 		`)
 		if err != nil {
@@ -40,7 +40,7 @@ func GetAllSubAdmins(db *sql.DB) http.HandlerFunc {
 		for rows.Next() {
 			var u models.UserBrief
 			if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.City); err != nil {
-				log.Println("❌ Row scan error:", err)
+
 				continue
 			}
 			users = append(users, u)

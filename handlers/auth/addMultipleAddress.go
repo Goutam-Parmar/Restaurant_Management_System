@@ -16,7 +16,6 @@ func AddSingleAddress(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		// 🧾 Extract path user_id
 		params := mux.Vars(r)
 		pathUserIDStr := params["user_id"]
 		pathUserID, err := strconv.ParseInt(pathUserIDStr, 10, 64)
@@ -25,7 +24,6 @@ func AddSingleAddress(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// 🔐 JWT Claims
 		claims, err := utils.ExtractAuthClaims(r.Header.Get("Authorization"))
 		if err != nil {
 			http.Error(w, "unauthorized: "+err.Error(), http.StatusUnauthorized)
@@ -40,14 +38,12 @@ func AddSingleAddress(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// 📥 Parse body
 		var req models.AddAddressRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "invalid request body", http.StatusBadRequest)
 			return
 		}
 
-		// ✅ DB Insert
 		query := `
 			INSERT INTO addresses (user_id, label, address_line, city, latitude, longitude, is_primary)
 			VALUES ($1, $2, $3, $4, $5, $6, $7)

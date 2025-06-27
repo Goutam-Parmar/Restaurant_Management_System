@@ -3,8 +3,11 @@ package restaurant
 import (
 	"RMS/models"
 	"RMS/utils"
+	"bytes"
 	"database/sql"
 	"encoding/json"
+	"io"
+	"log"
 	"net/http"
 	"time"
 )
@@ -13,10 +16,17 @@ func CreateRestaurant(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		var req models.CreateRestaurantRequest
+
+		body, _ := io.ReadAll(r.Body)
+		log.Println("Raw Request Body:", string(body))
+		r.Body = io.NopCloser(bytes.NewBuffer(body))
+
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			log.Println(" Failed to decode CreateRestaurantRequest:", err)
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
+
 		claims, err := utils.ExtractAuthClaims(r.Header.Get("Authorization"))
 		if err != nil {
 			http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)

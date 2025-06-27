@@ -5,7 +5,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"log"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -36,7 +35,7 @@ func GenerateRefreshToken(userID int64, email, role string) (string, error) {
 }
 
 func ParseToken(tokenString string) (*jwt.Token, jwt.MapClaims, error) {
-	log.Println("Starting token parse")
+	log.Println("Starting token parse step 5")
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
 		log.Println("checking signing method...")
@@ -58,55 +57,9 @@ func ParseToken(tokenString string) (*jwt.Token, jwt.MapClaims, error) {
 }
 
 func IsTokenType(claims jwt.MapClaims, expectedType string) bool {
+	log.Println("IsTokenType step 6 ")
 	if typ, ok := claims["type"].(string); ok {
 		return typ == expectedType
 	}
 	return false
-}
-
-func ExtractUserIDAndEmailFromHeader(header string) (int64, string, error) {
-	if header == "" || !strings.HasPrefix(header, "Bearer ") {
-		return 0, "", fmt.Errorf("missing or malformed Authorization header")
-	}
-
-	tokenStr := strings.TrimPrefix(header, "Bearer ")
-	_, claims, err := ParseToken(tokenStr)
-	if err != nil {
-		return 0, "", err
-	}
-
-	return ExtractUserFromClaims(claims)
-}
-
-func ExtractUserFromClaims(claims jwt.MapClaims) (int64, string, error) {
-	uidFloat, ok1 := claims["user_id"].(float64)
-	email, ok2 := claims["email"].(string)
-	if !ok1 || !ok2 {
-		return 0, "", fmt.Errorf("invalid claims")
-	}
-	return int64(uidFloat), email, nil
-}
-
-func ExtractUserIDEmailAndRoleFromHeader(header string) (int64, string, string, error) {
-	if header == "" || !strings.HasPrefix(header, "Bearer ") {
-		return 0, "", "", fmt.Errorf("missing or malformed Authorization header")
-	}
-
-	tokenStr := strings.TrimPrefix(header, "Bearer ")
-	_, claims, err := ParseToken(tokenStr)
-	if err != nil {
-		return 0, "", "", err
-	}
-
-	userID, email, err := ExtractUserFromClaims(claims)
-	if err != nil {
-		return 0, "", "", err
-	}
-
-	role, ok := claims["role"].(string)
-	if !ok {
-		return 0, "", "", fmt.Errorf("invalid claims: role missing")
-	}
-
-	return userID, email, role, nil
 }
