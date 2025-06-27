@@ -21,12 +21,17 @@ func GetDistanceToRestaurant(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "invalid restaurant ID", http.StatusBadRequest)
 			return
 		}
-		authHeader := r.Header.Get("Authorization")
-		userID, _, err := utils.ExtractUserIDAndEmailFromHeader(authHeader)
+		claims, err := utils.ExtractAuthClaims(r.Header.Get("Authorization"))
 		if err != nil {
 			http.Error(w, "unauthorized: "+err.Error(), http.StatusUnauthorized)
 			return
 		}
+		userID := claims.UserID
+		role := claims.Role
+		if role != "user" {
+			http.Error(w, "unauthorized : soory if you are user tehn only you should use this api", http.StatusUnauthorized)
+		}
+
 		var userLat, userLng float64
 		err = db.QueryRow(`
 			SELECT latitude, longitude 

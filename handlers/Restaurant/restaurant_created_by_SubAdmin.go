@@ -14,22 +14,25 @@ import (
 func CreateRestaurantBySubAdmin(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
+
 		var req models.CreateRestaurantRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "invalid request body", http.StatusBadRequest)
 			log.Println("failed to decode request:", err)
 			return
 		}
-		authHeader := r.Header.Get("Authorization")
-		userID, _, role, err := utils.ExtractUserIDEmailAndRoleFromHeader(authHeader)
+
+		claims, err := utils.ExtractAuthClaims(r.Header.Get("Authorization"))
 		if err != nil {
 			http.Error(w, "unauthorized: "+err.Error(), http.StatusUnauthorized)
 			return
 		}
-		if strings.ToLower(role) != "sub-admin" {
+
+		if strings.ToLower(claims.Role) != "sub-admin" {
 			http.Error(w, "forbidden: Only sub-admins can create restaurants here", http.StatusForbidden)
 			return
 		}
+
 		var restaurantID int64
 		query := `
 			INSERT INTO restaurants (name, address, city, latitude, longitude, rating, is_active, created_by)
@@ -44,13 +47,14 @@ func CreateRestaurantBySubAdmin(db *sql.DB) http.HandlerFunc {
 			req.Longitude,
 			req.Rating,
 			true,
-			userID,
+			claims.UserID,
 		).Scan(&restaurantID)
 		if err != nil {
 			http.Error(w, "failed to create restaurant", http.StatusInternalServerError)
-			log.Println(" insert error:", err)
+			log.Println("insert error:", err)
 			return
 		}
+
 		resp := models.CreateRestaurantResponse{
 			Message: "restaurant created by sub-admin successfully",
 			Restaurant: models.CreatedRestaurant{
@@ -62,13 +66,13 @@ func CreateRestaurantBySubAdmin(db *sql.DB) http.HandlerFunc {
 				Longitude: req.Longitude,
 				Rating:    req.Rating,
 				IsActive:  true,
-				CreatedBy: userID,
+				CreatedBy: claims.UserID,
 			},
 			ResponseTimeMs: float64(time.Since(start).Microseconds()) / 1000.0,
 		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(resp)
-
 	}
 }

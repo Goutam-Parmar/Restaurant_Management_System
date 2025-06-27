@@ -5,7 +5,6 @@ import (
 	"RMS/utils"
 	"database/sql"
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -66,10 +65,9 @@ func Login(db *sql.DB) http.HandlerFunc {
 			ResponseTimeMs: float64(time.Since(start).Microseconds()) / 1000.0,
 		}
 
-		// 📨 Send response
+		// Send response
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(resp)
 
-		log.Printf("✅ LOGIN %s logged in | %.2f ms", req.Email, resp.ResponseTimeMs)
 	}
 }

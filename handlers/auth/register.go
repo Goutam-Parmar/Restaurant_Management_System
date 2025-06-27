@@ -26,6 +26,10 @@ func Register(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "requied filled needed", http.StatusBadRequest)
 			return
 		}
+		if req.Role == "sub-admin" {
+			http.Error(w, "sub-admin can only be created by admin , you can create user ", http.StatusBadRequest)
+			return
+		}
 		validLabels := map[string]bool{
 			"home":   true,
 			"office": true,

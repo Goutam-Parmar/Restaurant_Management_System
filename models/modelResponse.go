@@ -33,13 +33,6 @@ type RefreshResponse struct {
 	ResponseTimeMs float64 `json:"response_time_ms"`
 }
 
-//	type RestaurantResponse struct {
-//		ID        int64  `json:"id"`
-//		Name      string `json:"name"`
-//		Address   string `json:"address"`
-//		City      string `json:"city"`
-//		CreatedBy int64  `json:"created_by"`
-//	}
 type CreatedRestaurant struct {
 	ID        int64   `json:"id"`
 	Name      string  `json:"name"`
@@ -121,20 +114,6 @@ type CreateUserResponse struct {
 	Email          string  `json:"email"`
 	ResponseTimeMs float64 `json:"response_time_ms"`
 }
-
-//type SubAdminUser struct {
-//	ID        int64     `json:"id"`
-//	Name      string    `json:"name"`
-//	Email     string    `json:"email"`
-//	City      string    `json:"city"`
-//	CreatedAt time.Time `json:"created_at"`
-//}
-
-//	type ListSubAdminsResponse struct {
-//		Message        string         `json:"message"`
-//		SubAdmins      []SubAdminUser `json:"subadmins"`
-//		ResponseTimeMs float64        `json:"response_time_ms"`
-//	}
 type UserBrief struct {
 	ID    int64  `json:"id"`
 	Name  string `json:"name"`
@@ -148,11 +127,6 @@ type GetAllSubAdminsResponse struct {
 	Users   []UserBrief `json:"users"`
 }
 
-//	type AddMenuByResponse struct {
-//		Message        string  `json:"message"`           // Status message
-//		MenuID         int64   `json:"menu_id"`           // Newly created menu item ID
-//		ResponseTimeMs float64 `json:"response_time_ms"`  // Latency in ms
-//	}
 type AddMenuResponseSubAdmin struct {
 	Message        string  `json:"message"`
 	MenuID         int64   `json:"menu_id"`

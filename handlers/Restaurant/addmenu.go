@@ -47,13 +47,15 @@ func AddMenu(db *sql.DB) http.HandlerFunc {
 			http.Error(w, " invalid category", http.StatusBadRequest)
 			return
 		}
-		tokenStr := r.Header.Get("Authorization")
-		userID, email, err := utils.ExtractUserIDAndEmailFromHeader(tokenStr)
+		claims, err := utils.ExtractAuthClaims(r.Header.Get("Authorization"))
 		if err != nil {
-			log.Println("failed to extract user from token:", err)
+			log.Println("failed to extract auth claims:", err)
 			http.Error(w, "unauthorized: "+err.Error(), http.StatusUnauthorized)
 			return
 		}
+		userID := claims.UserID
+		//log.Println("Email:", claims.Email)
+
 		var menuID int64
 		err = db.QueryRow(`
 			INSERT INTO menus (name, description, price, food_type, category, restaurant_id, created_by)

@@ -5,7 +5,6 @@ import (
 	"RMS/utils"
 	"database/sql"
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
 )
@@ -15,23 +14,25 @@ func CreateRestaurant(db *sql.DB) http.HandlerFunc {
 		start := time.Now()
 		var req models.CreateRestaurantRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "invalid request body", http.StatusBadRequest)
-			log.Println("failed to decode request:", err)
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
-		authHeader := r.Header.Get("Authorization")
-		userID, _, err := utils.ExtractUserIDAndEmailFromHeader(authHeader)
+		claims, err := utils.ExtractAuthClaims(r.Header.Get("Authorization"))
 		if err != nil {
-			http.Error(w, "unauthorized: "+err.Error(), http.StatusUnauthorized)
-			log.Println("failed to extract user from token:", err)
+			http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
 			return
 		}
+		if claims.Role != "admin" {
+			http.Error(w, "Forbidden: only admins can create restaurants", http.StatusForbidden)
+			return
+		}
+
 		var restaurantID int64
 		query := `
-			INSERT INTO restaurants (name, address, city, latitude, longitude, rating, is_active, created_by)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-			RETURNING id
-		`
+	INSERT INTO restaurants (name, address, city, latitude, longitude, rating, is_active, created_by)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	RETURNING id
+`
 		err = db.QueryRow(query,
 			req.Name,
 			req.Address,
@@ -40,13 +41,14 @@ func CreateRestaurant(db *sql.DB) http.HandlerFunc {
 			req.Longitude,
 			req.Rating,
 			true,
-			userID,
+			claims.UserID,
 		).Scan(&restaurantID)
+
 		if err != nil {
-			http.Error(w, "failed to create restaurant", http.StatusInternalServerError)
-			log.Println("db insert error:", err)
+			http.Error(w, "Failed to create restaurant", http.StatusInternalServerError)
 			return
 		}
+
 		resp := models.CreateRestaurantResponse{
 			Message: "Restaurant created successfully",
 			Restaurant: models.CreatedRestaurant{
@@ -58,13 +60,13 @@ func CreateRestaurant(db *sql.DB) http.HandlerFunc {
 				Longitude: req.Longitude,
 				Rating:    req.Rating,
 				IsActive:  true,
-				CreatedBy: userID,
+				CreatedBy: claims.UserID,
 			},
 			ResponseTimeMs: float64(time.Since(start).Microseconds()) / 1000.0,
 		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(resp)
-
 	}
 }

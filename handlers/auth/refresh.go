@@ -17,32 +17,31 @@ func RefreshToken() http.HandlerFunc {
 			http.Error(w, "missing auth header", http.StatusUnauthorized)
 			return
 		}
+
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 		token, claims, err := utils.ParseToken(tokenStr)
 		if err != nil || !token.Valid || !utils.IsTokenType(claims, "refresh") {
 			http.Error(w, "invalid or expired refresh token", http.StatusUnauthorized)
 			return
 		}
-		userID, email, err := utils.ExtractUserFromClaims(claims)
+
+		authClaims, err := utils.ExtractAuthClaims(authHeader)
 		if err != nil {
 			http.Error(w, "invalid token claims", http.StatusUnauthorized)
 			return
 		}
-		role, ok := claims["role"].(string)
-		if !ok {
-			http.Error(w, "role missing in token", http.StatusUnauthorized)
-			return
-		}
-		accessToken, err := utils.GenerateAccessToken(userID, email, role)
+
+		accessToken, err := utils.GenerateAccessToken(authClaims.UserID, authClaims.Email, authClaims.Role)
 		if err != nil {
 			http.Error(w, "failed to generate access token", http.StatusInternalServerError)
 			return
 		}
-		refreshToken, err := utils.GenerateRefreshToken(userID, email, role)
+		refreshToken, err := utils.GenerateRefreshToken(authClaims.UserID, authClaims.Email, authClaims.Role)
 		if err != nil {
 			http.Error(w, "failed to generate refresh token", http.StatusInternalServerError)
 			return
 		}
+
 		resp := models.RefreshResponse{
 			Message:        "Token refreshed successfully",
 			AccessToken:    accessToken,

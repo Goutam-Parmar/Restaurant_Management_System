@@ -29,7 +29,7 @@ func GenerateRefreshToken(userID int64, email, role string) (string, error) {
 		"email":   email,
 		"role":    role,
 		"type":    "refresh",
-		"exp":     time.Now().Add(7 * 24 * time.Hour).Unix(), // 7 days
+		"exp":     time.Now().Add(7 * 24 * time.Hour).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(jwtKey)
