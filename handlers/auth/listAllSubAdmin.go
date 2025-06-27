@@ -30,7 +30,7 @@ func GetAllSubAdmins(db *sql.DB) http.HandlerFunc {
         WHERE ur.role = 'sub-admin';
 		`)
 		if err != nil {
-			log.Println("❌ Failed to query subadmins:", err)
+			log.Println("Failed to query subadmins:", err)
 			http.Error(w, "Failed to fetch subadmins", http.StatusInternalServerError)
 			return
 		}
@@ -46,7 +46,6 @@ func GetAllSubAdmins(db *sql.DB) http.HandlerFunc {
 			users = append(users, u)
 		}
 
-		// ✅ Prepare response
 		resp := models.GetAllSubAdminsResponse{
 			Message: "Sub-admins fetched successfully",
 			Users:   users,

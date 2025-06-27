@@ -19,6 +19,7 @@ func InitRoutes(db *sql.DB) *mux.Router {
 	protected := router.PathPrefix("/").Subrouter()
 	protected.Use(utils.JWTMiddleware())
 	protected.HandleFunc("/getList/users", auth.ListAllUsers(db)).Methods("GET")
+	protected.HandleFunc("/user/{user_id}/address", auth.AddSingleAddress(db)).Methods("POST")
 
 	protected.HandleFunc("/restaurants", restaurant.GetAllRestaurants(db)).Methods("GET")
 	protected.HandleFunc("/restaurants/{restaurant_id}/menus", restaurant.GetMenusByRestaurantID(db)).Methods("GET")

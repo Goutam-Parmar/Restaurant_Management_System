@@ -31,3 +31,11 @@ type AddMenuRequest struct {
 	FoodType    string  `json:"food_type"`
 	Category    string  `json:"category"`
 }
+type AddAddressRequest struct {
+	Label       string  `json:"label"`
+	AddressLine string  `json:"address_line"`
+	City        string  `json:"city"`
+	Latitude    float64 `json:"latitude"`
+	Longitude   float64 `json:"longitude"`
+	IsPrimary   bool    `json:"is_primary"`
+}
