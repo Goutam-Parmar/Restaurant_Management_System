@@ -45,13 +45,11 @@ func ListAllUsers(db *sql.DB) http.HandlerFunc {
 			}
 			users = append(users, user)
 		}
-
 		resp := models.GetAllUsersResponse{
 			Message:        "User list fetched successfully",
 			Users2:         users,
 			ResponseTimeMs: float64(time.Since(start).Microseconds()) / 1000.0,
 		}
-
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(resp)
 	}

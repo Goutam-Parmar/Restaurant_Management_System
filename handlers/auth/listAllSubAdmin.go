@@ -19,7 +19,7 @@ func GetAllSubAdmins(db *sql.DB) http.HandlerFunc {
 		}
 
 		rows, err := db.Query(`
-			 SELECT 
+			         SELECT 
                      u.id, 
                      u.name, 
                      u.email, 

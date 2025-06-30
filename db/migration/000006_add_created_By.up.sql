@@ -1,0 +1,64 @@
+-- BEGIN;
+--
+-- -- ✅ 1. Add created_by (nullable, self-referencing FK)
+-- DO $$
+-- BEGIN
+--   IF NOT EXISTS (
+--     SELECT 1 FROM information_schema.columns
+--     WHERE table_name='users' AND column_name='created_by'
+--   ) THEN
+-- ALTER TABLE users
+--     ADD COLUMN created_by BIGINT REFERENCES users(id) ON DELETE SET NULL;
+-- END IF;
+-- END$$;
+--
+-- -- ✅ 2. Add is_deleted for soft delete
+-- DO $$
+-- BEGIN
+--   IF NOT EXISTS (
+--     SELECT 1 FROM information_schema.columns
+--     WHERE table_name='users' AND column_name='is_deleted'
+--   ) THEN
+-- ALTER TABLE users
+--     ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE;
+-- END IF;
+-- END$$;
+--
+-- -- ✅ 3. Add created_at timestamp
+-- DO $$
+-- BEGIN
+--   IF NOT EXISTS (
+--     SELECT 1 FROM information_schema.columns
+--     WHERE table_name='users' AND column_name='created_at'
+--   ) THEN
+-- ALTER TABLE users
+--     ADD COLUMN created_at TIMESTAMP DEFAULT NOW();
+-- END IF;
+-- END$$;
+--
+-- -- ✅ 4. Drop old UNIQUE index on email if it exists (Postgres default name)
+-- DO $$
+-- BEGIN
+--   IF EXISTS (
+--     SELECT 1 FROM pg_indexes WHERE indexname = 'users_email_key'
+--   ) THEN
+--     EXECUTE 'DROP INDEX users_email_key';
+-- END IF;
+-- END$$;
+--
+-- -- ✅ 5. Drop old plain index on email if it exists
+-- DROP INDEX IF EXISTS idx_users_email;
+--
+-- -- ✅ 6. Create partial unique index for active users only
+-- DO $$
+-- BEGIN
+--   IF NOT EXISTS (
+--     SELECT 1 FROM pg_indexes WHERE indexname = 'unique_active_email'
+--   ) THEN
+-- CREATE UNIQUE INDEX unique_active_email
+--     ON users(email)
+--     WHERE is_deleted = FALSE;
+-- END IF;
+-- END$$;
+--
+-- COMMIT;

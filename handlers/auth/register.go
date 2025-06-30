@@ -5,31 +5,61 @@ import (
 	"RMS/utils"
 	"database/sql"
 	"encoding/json"
-	"golang.org/x/crypto/bcrypt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
-func Register(db *sql.DB) http.HandlerFunc {
+func RegisterNewUser(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		var req models.RegisterRequest
 
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "missing auth header", http.StatusUnauthorized)
+			return
+		}
+
+		authClaims, err := utils.ExtractAuthClaims(authHeader)
+		if err != nil {
+			http.Error(w, "invalid or expired token", http.StatusUnauthorized)
+			return
+		}
+		createdByID := authClaims.UserID
+
+		var req models.RegisterRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "invalid payload", http.StatusBadRequest)
 			return
 		}
+
+		req.Name = strings.TrimSpace(req.Name)
 		req.Email = strings.ToLower(strings.TrimSpace(req.Email))
-		if req.Name == "" || req.Email == "" || req.Password == "" || req.Role == "" || req.Label == "" || req.AddressLine == "" || req.City == "" {
-			http.Error(w, "requied filled needed", http.StatusBadRequest)
+		req.Password = strings.TrimSpace(req.Password)
+		req.Phone = strings.TrimSpace(req.Phone)
+		req.Role = strings.TrimSpace(req.Role)
+		req.Label = strings.TrimSpace(req.Label)
+		req.AddressLine = strings.TrimSpace(req.AddressLine)
+		req.City = strings.TrimSpace(req.City)
+
+		if req.Name == "" || req.Email == "" || req.Password == "" || req.Phone == "" ||
+			req.Role == "" || req.Label == "" || req.AddressLine == "" || req.City == "" {
+			http.Error(w, "required fields missing", http.StatusBadRequest)
 			return
 		}
-		if req.Role == "sub-admin" {
-			http.Error(w, "sub-admin can only be created by admin , you can create user ", http.StatusBadRequest)
+
+		if len(req.Phone) != 10 || !utils.IsNumeric(req.Phone) {
+			http.Error(w, "invalid phone number", http.StatusBadRequest)
 			return
 		}
+
+		if req.Role == "sub-admin" && authClaims.Role != "admin" {
+			http.Error(w, "only admin can create sub-admins", http.StatusForbidden)
+			return
+		}
+
 		validLabels := map[string]bool{
 			"home":   true,
 			"office": true,
@@ -41,6 +71,7 @@ func Register(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "invalid address label", http.StatusBadRequest)
 			return
 		}
+
 		tx, err := db.Begin()
 		if err != nil {
 			http.Error(w, "failed to start transaction", http.StatusInternalServerError)
@@ -51,15 +82,27 @@ func Register(db *sql.DB) http.HandlerFunc {
 				tx.Rollback()
 			}
 		}()
-		var exists bool
-		err = tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, req.Email).Scan(&exists)
+
+		var emailExists bool
+		err = tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, req.Email).Scan(&emailExists)
 		if err != nil {
-			log.Println("failed to check existing user:", err)
-			http.Error(w, "failed to check existing user", http.StatusInternalServerError)
+			http.Error(w, "failed to check existing email", http.StatusInternalServerError)
 			return
 		}
-		if exists {
+		if emailExists {
 			http.Error(w, "email already registered", http.StatusConflict)
+			return
+		}
+
+		// Check phone exists
+		var phoneExists bool
+		err = tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE phone = $1)`, req.Phone).Scan(&phoneExists)
+		if err != nil {
+			http.Error(w, "failed to check existing phone", http.StatusInternalServerError)
+			return
+		}
+		if phoneExists {
+			http.Error(w, "phone already registered", http.StatusConflict)
 			return
 		}
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -67,52 +110,50 @@ func Register(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "failed to hash password", http.StatusInternalServerError)
 			return
 		}
+
 		var userID int64
 		err = tx.QueryRow(`
-			INSERT INTO users (name, email, password)
-			VALUES ($1, $2, $3)
+			INSERT INTO users (name, email, password, phone, created_by)
+			VALUES ($1, $2, $3, $4, $5)
 			RETURNING id
-		`, req.Name, req.Email, string(hashedPassword)).Scan(&userID)
+		`, req.Name, req.Email, string(hashedPassword), req.Phone, createdByID).Scan(&userID)
 		if err != nil {
-			//log.Println("failed to insert into users:", err)
 			http.Error(w, "failed to create user", http.StatusInternalServerError)
 			return
 		}
-		_, err = tx.Exec(`
-			INSERT INTO user_roles (user_id, role)
-			VALUES ($1, $2)
-		`, userID, req.Role)
+
+		_, err = tx.Exec(`INSERT INTO user_roles (user_id, role) VALUES ($1, $2)`, userID, req.Role)
 		if err != nil {
-			//.Println("failed to insert into user_roles:", err)
 			http.Error(w, "failed to assign role", http.StatusInternalServerError)
 			return
 		}
+
 		_, err = tx.Exec(`
 			INSERT INTO addresses (user_id, label, address_line, city, latitude, longitude, is_primary)
-			VALUES ($1, $2, $3, $4, $5, $6, true)
+			VALUES ($1, $2, $3, $4, $5, $6, TRUE)
 		`, userID, req.Label, req.AddressLine, req.City, req.Latitude, req.Longitude)
 		if err != nil {
-			//log.Println("failed to insert address:", err)
 			http.Error(w, "failed to insert address", http.StatusInternalServerError)
 			return
 		}
+
 		if err = tx.Commit(); err != nil {
-			//log.Println("failed to commit transaction:", err)
 			http.Error(w, "failed to complete registration", http.StatusInternalServerError)
 			return
 		}
+
 		accessToken, err := utils.GenerateAccessToken(userID, req.Email, req.Role)
 		if err != nil {
-			log.Println("failed to generate access token:", err)
 			http.Error(w, "failed to generate token", http.StatusInternalServerError)
 			return
 		}
+
 		refreshToken, err := utils.GenerateRefreshToken(userID, req.Email, req.Role)
 		if err != nil {
-			log.Println("failed to generate refresh token:", err)
 			http.Error(w, "failed to generate refresh token", http.StatusInternalServerError)
 			return
 		}
+
 		resp := models.RegisterResponse{
 			Message: "user registered successfully",
 			User: models.RegisteredUser{
@@ -128,6 +169,5 @@ func Register(db *sql.DB) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(resp)
-
 	}
 }

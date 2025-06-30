@@ -5,6 +5,7 @@ import (
 	"RMS/utils"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -35,6 +36,7 @@ func Login(db *sql.DB) http.HandlerFunc {
 			LIMIT 1
 		`, req.Email).Scan(&userID, &name, &hashedPassword, &role)
 		if err != nil {
+			log.Println(err)
 			http.Error(w, "invalid email or password", http.StatusUnauthorized)
 			return
 		}

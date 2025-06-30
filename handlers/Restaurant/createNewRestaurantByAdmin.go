@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func CreateRestaurant(db *sql.DB) http.HandlerFunc {
+func CreateRestaurantByAdmin(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		var req models.CreateRestaurantRequest
@@ -34,6 +34,10 @@ func CreateRestaurant(db *sql.DB) http.HandlerFunc {
 		}
 		if claims.Role != "admin" {
 			http.Error(w, "Forbidden: only admins can create restaurants", http.StatusForbidden)
+			return
+		}
+		if req.Rating < 0.0 || req.Rating > 5.0 {
+			http.Error(w, "Rating must be between 0.0 and 5.0", http.StatusBadRequest)
 			return
 		}
 

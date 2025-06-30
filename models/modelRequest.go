@@ -4,6 +4,7 @@ type RegisterRequest struct {
 	Name        string  `json:"name"`
 	Email       string  `json:"email"`
 	Password    string  `json:"password"`
+	Phone       string  `json:"phone"`
 	Role        string  `json:"role"`
 	Label       string  `json:"label"`
 	AddressLine string  `json:"address_line"`
@@ -11,6 +12,7 @@ type RegisterRequest struct {
 	Latitude    float64 `json:"latitude"`
 	Longitude   float64 `json:"longitude"`
 }
+
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -22,7 +24,7 @@ type CreateRestaurantRequest struct {
 	City      string  `json:"city"`
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
-	Rating    int     `json:"rating"`
+	Rating    float64 `json:"rating"`
 }
 type AddMenuRequest struct {
 	Name        string  `json:"name"`

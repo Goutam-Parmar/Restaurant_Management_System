@@ -40,7 +40,7 @@ type CreatedRestaurant struct {
 	City      string  `json:"city"`
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
-	Rating    int     `json:"rating"`
+	Rating    float64 `json:"rating"`
 	IsActive  bool    `json:"is_active"`
 	CreatedBy int64   `json:"created_by"`
 }
@@ -60,18 +60,19 @@ type AddedMenu struct {
 	RestaurantID int64   `json:"restaurant_id"`
 	CreatedBy    int64   `json:"created_by"`
 }
+
 type AddMenuResponse struct {
-	Message        string    `json:"message"`
-	Menu           AddedMenu `json:"menu"`
-	ResponseTimeMs float64   `json:"response_time_ms"`
+	Message        string      `json:"message"`
+	Menus          []AddedMenu `json:"menus"`
+	ResponseTimeMs float64     `json:"response_time_ms"`
 }
 type SlimRestaurantResponse struct {
-	ID       int64  `json:"id"`
-	Name     string `json:"name"`
-	Address  string `json:"address"`
-	City     string `json:"city"`
-	Rating   int    `json:"rating"`
-	IsActive bool   `json:"is_active"`
+	ID       int64   `json:"id"`
+	Name     string  `json:"name"`
+	Address  string  `json:"address"`
+	City     string  `json:"city"`
+	Rating   float64 `json:"rating"`
+	IsActive bool    `json:"is_active"`
 }
 type AllRestaurantsSlimResponse struct {
 	Message        string                   `json:"message"`

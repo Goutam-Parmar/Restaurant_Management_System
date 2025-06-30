@@ -33,7 +33,6 @@ func GenerateRefreshToken(userID int64, email, role string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(jwtKey)
 }
-
 func ParseToken(tokenString string) (*jwt.Token, jwt.MapClaims, error) {
 	log.Println("Starting token parse step 5")
 	claims := jwt.MapClaims{}

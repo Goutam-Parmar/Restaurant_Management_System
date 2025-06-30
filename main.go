@@ -49,4 +49,5 @@ func main() {
 	// Start server
 	fmt.Println("Server running at http://localhost:8081")
 	log.Fatal(http.ListenAndServe(":8081", router))
+
 }

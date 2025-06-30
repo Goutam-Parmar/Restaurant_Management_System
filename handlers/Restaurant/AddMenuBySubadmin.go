@@ -55,7 +55,6 @@ func AddMenuBySubadmin(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// ✅ Insert into menu table
 		var menuID int64
 		query := `
 			INSERT INTO menus (name, description, price, is_available, food_type, category, restaurant_id, created_by)
@@ -77,7 +76,6 @@ func AddMenuBySubadmin(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// 📦 Response
 		resp := models.AddMenuResponseSubAdmin{
 			Message:        "Menu added successfully",
 			MenuID:         menuID,
