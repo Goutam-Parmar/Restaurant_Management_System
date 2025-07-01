@@ -1,9 +1,9 @@
 package restaurant
 
 import (
+	"RMS/db"
 	"RMS/models"
 	"RMS/utils"
-	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func CreateRestaurantBySubAdmin(db *sql.DB) http.HandlerFunc {
+func CreateRestaurantBySubAdmin() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
@@ -39,7 +39,7 @@ func CreateRestaurantBySubAdmin(db *sql.DB) http.HandlerFunc {
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 			RETURNING id
 		`
-		err = db.QueryRow(query,
+		err = db.RM.QueryRow(query,
 			req.Name,
 			req.Address,
 			req.City,

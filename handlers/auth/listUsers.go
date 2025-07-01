@@ -1,16 +1,16 @@
 package auth
 
 import (
+	"RMS/db"
 	"RMS/models"
 	"RMS/utils"
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
 )
 
-func ListAllUsers(db *sql.DB) http.HandlerFunc {
+func ListAllUsers() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		claims, err := utils.ExtractAuthClaims(r.Header.Get("Authorization"))
@@ -31,7 +31,7 @@ func ListAllUsers(db *sql.DB) http.HandlerFunc {
             LEFT JOIN addresses a ON u.id = a.user_id AND a.is_primary = true
             WHERE ur.role = 'user'
 		`
-		rows, err := db.Query(query)
+		rows, err := db.RM.Query(query)
 		if err != nil {
 			http.Error(w, "failed to fetch users", http.StatusInternalServerError)
 			return

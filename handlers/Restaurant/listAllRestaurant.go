@@ -1,17 +1,17 @@
 package restaurant
 
 import (
+	"RMS/db"
 	"RMS/models"
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"time"
 )
 
-func GetAllRestaurants(db *sql.DB) http.HandlerFunc {
+func GetAllRestaurants() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		rows, err := db.Query(`
+		rows, err := db.RM.Query(`
 			SELECT id, name, address, city, rating, is_active
 			FROM restaurants
 			WHERE is_active = true

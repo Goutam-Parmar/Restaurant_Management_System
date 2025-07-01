@@ -1,6 +1,12 @@
 package utils
 
-// ✅ Utility: isNumeric checks if string is numeric
+import (
+	"database/sql"
+	"github.com/jmoiron/sqlx"
+)
+
+var RMS *sqlx.DB
+
 func IsNumeric(s string) bool {
 	for _, r := range s {
 		if r < '0' || r > '9' {
@@ -8,4 +14,15 @@ func IsNumeric(s string) bool {
 		}
 	}
 	return true
+}
+func Tx(tx *sql.Tx, err *error) {
+	if p := recover(); p != nil {
+		tx.Rollback()
+		panic(p)
+	} else if *err != nil {
+		tx.Rollback()
+	} else {
+		*err = tx.Commit()
+	}
+
 }

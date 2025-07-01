@@ -1,9 +1,9 @@
 package restaurant
 
 import (
+	"RMS/db"
 	"RMS/models"
 	"RMS/utils"
-	"database/sql"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"log"
@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func AddMenuByAdmin(db *sql.DB) http.HandlerFunc {
+func AddMenuByAdmin() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
@@ -42,7 +42,7 @@ func AddMenuByAdmin(db *sql.DB) http.HandlerFunc {
 		}
 
 		var restaurantExists bool
-		err = db.QueryRow(`SELECT EXISTS(SELECT 1 FROM restaurants WHERE id = $1)`, restaurantID).Scan(&restaurantExists)
+		err = db.RM.QueryRow(`SELECT EXISTS(SELECT 1 FROM restaurants WHERE id = $1)`, restaurantID).Scan(&restaurantExists)
 		if err != nil || !restaurantExists {
 			http.Error(w, "restaurant does not exist", http.StatusBadRequest)
 			return
@@ -50,7 +50,7 @@ func AddMenuByAdmin(db *sql.DB) http.HandlerFunc {
 
 		// Validate user exists
 		var userExists bool
-		err = db.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)`, userID).Scan(&userExists)
+		err = db.RM.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)`, userID).Scan(&userExists)
 		if err != nil || !userExists {
 			http.Error(w, "invalid user", http.StatusBadRequest)
 			return
@@ -62,7 +62,7 @@ func AddMenuByAdmin(db *sql.DB) http.HandlerFunc {
 			"starter": true, "main-course": true, "dessert": true, "breakfast": true, "beverage": true,
 		}
 
-		tx, err := db.Begin()
+		tx, err := db.RM.Begin()
 		if err != nil {
 			log.Println("failed to begin tx:", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)

@@ -1,15 +1,15 @@
 package auth
 
 import (
+	"RMS/db"
 	"RMS/models"
 	"RMS/utils"
-	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
 )
 
-func GetAllSubAdmins(db *sql.DB) http.HandlerFunc {
+func GetAllSubAdmins() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		claims, err := utils.ExtractAuthClaims(r.Header.Get("Authorization"))
@@ -18,7 +18,7 @@ func GetAllSubAdmins(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		rows, err := db.Query(`
+		rows, err := db.RM.Query(`
 			         SELECT 
                      u.id, 
                      u.name, 

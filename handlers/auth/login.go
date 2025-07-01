@@ -1,9 +1,9 @@
 package auth
 
 import (
+	"RMS/db"
 	"RMS/models"
 	"RMS/utils"
-	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -13,7 +13,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func Login(db *sql.DB) http.HandlerFunc {
+func Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		var req models.LoginRequest
@@ -28,7 +28,7 @@ func Login(db *sql.DB) http.HandlerFunc {
 		}
 		var userID int64
 		var name, hashedPassword, role string
-		err := db.QueryRow(`
+		err := db.RM.QueryRow(`
 			SELECT u.id, u.name, u.password, ur.role
 			FROM users u
 			JOIN user_roles ur ON u.id = ur.user_id

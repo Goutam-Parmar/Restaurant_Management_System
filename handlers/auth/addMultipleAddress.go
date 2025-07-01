@@ -1,9 +1,9 @@
 package auth
 
 import (
+	"RMS/db"
 	"RMS/models"
 	"RMS/utils"
-	"database/sql"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func AddSingleAddress(db *sql.DB) http.HandlerFunc {
+func AddSingleAddress() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		params := mux.Vars(r)
@@ -41,7 +41,7 @@ func AddSingleAddress(db *sql.DB) http.HandlerFunc {
 			return
 		}
 		//transaction
-		tx, err := db.Begin()
+		tx, err := db.RM.Begin()
 		if err != nil {
 			http.Error(w, "DB transaction error", http.StatusInternalServerError)
 			return

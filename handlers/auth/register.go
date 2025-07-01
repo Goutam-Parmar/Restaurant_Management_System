@@ -1,10 +1,13 @@
 package auth
 
 import (
+	"RMS/db"
+	"RMS/db/dbHelper"
 	"RMS/models"
 	"RMS/utils"
 	"database/sql"
 	"encoding/json"
+	"github.com/jmoiron/sqlx"
 	"net/http"
 	"strings"
 	"time"
@@ -12,7 +15,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func RegisterNewUser(db *sql.DB) http.HandlerFunc {
+func RegisterNewUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
@@ -27,9 +30,12 @@ func RegisterNewUser(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "invalid or expired token", http.StatusUnauthorized)
 			return
 		}
+		var req models.RegisterRequestDB
 		createdByID := authClaims.UserID
+		req.Created_by = createdByID
 
-		var req models.RegisterRequest
+		// Actull code start from here
+
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "invalid payload", http.StatusBadRequest)
 			return
@@ -71,17 +77,25 @@ func RegisterNewUser(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "invalid address label", http.StatusBadRequest)
 			return
 		}
-
-		tx, err := db.Begin()
-		if err != nil {
-			http.Error(w, "failed to start transaction", http.StatusInternalServerError)
+		//pasword
+		hashedPassword, hashErr := bcrypt.GenerateFromPassword([]byte(req.Password), 10)
+		if hashErr != nil {
+			http.Error(w, "password hash error", http.StatusBadRequest)
 			return
 		}
-		defer func() {
-			if err != nil {
-				tx.Rollback()
-			}
-		}()
+		req.Password = string(hashedPassword)
+
+		//// db helper
+		//txErr := database.Tx(func(tx *sqlx.Tx) error {
+		//	user, createErr := dbHelper.Register(tx, &req)
+		//	userID = user
+		//	return createErr
+		//
+		//})
+
+		tx, err := db.RM.Begin()
+		defer utils.Tx(tx, &err)
+		err = dbHelper.RegisterUser(tx, &req)
 
 		var emailExists bool
 		err = tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, req.Email).Scan(&emailExists)
@@ -119,21 +133,6 @@ func RegisterNewUser(db *sql.DB) http.HandlerFunc {
 		`, req.Name, req.Email, string(hashedPassword), req.Phone, createdByID).Scan(&userID)
 		if err != nil {
 			http.Error(w, "failed to create user", http.StatusInternalServerError)
-			return
-		}
-
-		_, err = tx.Exec(`INSERT INTO user_roles (user_id, role) VALUES ($1, $2)`, userID, req.Role)
-		if err != nil {
-			http.Error(w, "failed to assign role", http.StatusInternalServerError)
-			return
-		}
-
-		_, err = tx.Exec(`
-			INSERT INTO addresses (user_id, label, address_line, city, latitude, longitude, is_primary)
-			VALUES ($1, $2, $3, $4, $5, $6, TRUE)
-		`, userID, req.Label, req.AddressLine, req.City, req.Latitude, req.Longitude)
-		if err != nil {
-			http.Error(w, "failed to insert address", http.StatusInternalServerError)
 			return
 		}
 

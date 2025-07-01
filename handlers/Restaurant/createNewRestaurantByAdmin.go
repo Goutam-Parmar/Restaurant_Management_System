@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func CreateRestaurantByAdmin(db *sql.DB) http.HandlerFunc {
+func CreateRestaurantByAdmin() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		var req models.CreateRestaurantRequest

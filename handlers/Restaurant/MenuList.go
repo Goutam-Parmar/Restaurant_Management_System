@@ -1,8 +1,8 @@
 package restaurant
 
 import (
+	"RMS/db"
 	"RMS/models"
-	"database/sql"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"log"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func GetMenusByRestaurantID(db *sql.DB) http.HandlerFunc {
+func GetMenusByRestaurantID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		vars := mux.Vars(r)
@@ -22,12 +22,12 @@ func GetMenusByRestaurantID(db *sql.DB) http.HandlerFunc {
 			return
 		}
 		var restaurantName string
-		err = db.QueryRow("SELECT name FROM restaurants WHERE id = $1 AND is_active = true", restaurantID).Scan(&restaurantName)
+		err = db.RM.QueryRow("SELECT name FROM restaurants WHERE id = $1 AND is_active = true", restaurantID).Scan(&restaurantName)
 		if err != nil {
 			http.Error(w, "restaurant not found or inactive", http.StatusNotFound)
 			return
 		}
-		rows, err := db.Query(`
+		rows, err := db.RM.Query(`
 			SELECT id, name, description, price, is_available, food_type, category
 			FROM menus
 			WHERE restaurant_id = $1 AND is_available = true

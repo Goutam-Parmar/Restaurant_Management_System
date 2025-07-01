@@ -1,9 +1,9 @@
 package auth
 
 import (
+	"RMS/db"
 	"RMS/models"
 	"RMS/utils"
-	"database/sql"
 	"encoding/json"
 
 	"golang.org/x/crypto/bcrypt"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func CreateUserBySubAdmin(db *sql.DB) http.HandlerFunc {
+func CreateUserBySubAdmin() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		claims, err := utils.ExtractAuthClaims(r.Header.Get("Authorization"))
@@ -59,7 +59,7 @@ func CreateUserBySubAdmin(db *sql.DB) http.HandlerFunc {
 		}
 
 		// Begin transaction
-		tx, err := db.Begin()
+		tx, err := db.RM.Begin()
 		if err != nil {
 			http.Error(w, "DB transaction error", http.StatusInternalServerError)
 			return

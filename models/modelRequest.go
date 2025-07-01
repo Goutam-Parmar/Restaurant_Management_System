@@ -12,6 +12,19 @@ type RegisterRequest struct {
 	Latitude    float64 `json:"latitude"`
 	Longitude   float64 `json:"longitude"`
 }
+type RegisterRequestDB struct {
+	Name        string  `json:"name"`
+	Email       string  `json:"email"`
+	Password    string  `json:"password"`
+	Phone       string  `json:"phone"`
+	Role        string  `json:"role"`
+	Label       string  `json:"label"`
+	AddressLine string  `json:"address_line"`
+	City        string  `json:"city"`
+	Latitude    float64 `json:"latitude"`
+	Longitude   float64 `json:"longitude"`
+	Created_by  int64   `json:"created_By"`
+}
 
 type LoginRequest struct {
 	Email    string `json:"email"`

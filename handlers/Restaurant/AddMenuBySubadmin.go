@@ -1,9 +1,9 @@
 package restaurant
 
 import (
+	"RMS/db"
 	"RMS/models"
 	"RMS/utils"
-	"database/sql"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func AddMenuBySubadmin(db *sql.DB) http.HandlerFunc {
+func AddMenuBySubadmin() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		//Extract restaurant_id
@@ -35,7 +35,7 @@ func AddMenuBySubadmin(db *sql.DB) http.HandlerFunc {
 		}
 
 		var count int
-		err = db.QueryRow(`
+		err = db.RM.QueryRow(`
 			SELECT COUNT(1) 
 			FROM restaurants 
 			WHERE id = $1 AND created_by = $2
@@ -61,7 +61,7 @@ func AddMenuBySubadmin(db *sql.DB) http.HandlerFunc {
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 			RETURNING id
 		`
-		err = db.QueryRow(query,
+		err = db.RM.QueryRow(query,
 			req.Name,
 			req.Description,
 			req.Price,

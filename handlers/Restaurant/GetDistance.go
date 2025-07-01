@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func GetDistanceToRestaurant(db *sql.DB) http.HandlerFunc {
+func GetDistanceToRestaurant() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		vars := mux.Vars(r)
