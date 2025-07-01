@@ -144,3 +144,10 @@ type GetAllUsersResponse struct {
 	Users2         []UserBrief2 `json:"users"`
 	ResponseTimeMs float64      `json:"response_time_ms"`
 }
+type PlaceOrderResponse struct {
+	Message        string  `json:"message"`
+	OrderID        int64   `json:"order_id"`
+	TotalAmount    float64 `json:"total_amount"`
+	Status         string  `json:"status"`
+	ResponseTimeMs float64 `json:"response_time_ms"`
+}

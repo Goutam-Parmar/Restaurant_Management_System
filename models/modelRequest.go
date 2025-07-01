@@ -41,3 +41,14 @@ type AddAddressRequest struct {
 	Longitude   float64 `json:"longitude"`
 	IsPrimary   bool    `json:"is_primary"`
 }
+type OrderItemRequest struct {
+	MenuID   int64 `json:"menu_id" validate:"required"`
+	Quantity int   `json:"quantity" validate:"required,gt=0"`
+}
+
+type PlaceOrderRequest struct {
+	RestaurantID  int64              `json:"restaurant_id" validate:"required"`
+	AddressID     int64              `json:"address_id" validate:"required"`
+	Items         []OrderItemRequest `json:"items" validate:"required,dive"`
+	PaymentMethod string             `json:"payment_method"`
+}

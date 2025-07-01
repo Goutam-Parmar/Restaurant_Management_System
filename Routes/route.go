@@ -3,6 +3,7 @@ package Routes
 import (
 	"RMS/handlers/Restaurant"
 	"RMS/handlers/auth"
+	"RMS/handlers/booking"
 	"database/sql"
 	"github.com/gorilla/mux"
 )
@@ -32,5 +33,9 @@ func InitRoutes(db *sql.DB) *mux.Router {
 	subadmin.HandleFunc("/api/v1/create-restaurant", restaurant.CreateRestaurantBySubAdmin(db)).Methods("POST")
 	subadmin.HandleFunc("/api/v1/addMenuBySubAdmin/{restaurant_id}", restaurant.AddMenuBySubadmin(db)).Methods("POST")
 	subadmin.HandleFunc("/api/v1/auth/user/registerBySubAdmin", auth.CreateUserBySubAdmin(db)).Methods("POST")
+
+	user := router.PathPrefix("/api/v1/user").Subrouter()
+	user.HandleFunc("/orders/place", booking.PlaceOrderHandler(db)).Methods("POST")
+
 	return router
 }
