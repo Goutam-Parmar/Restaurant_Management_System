@@ -3,8 +3,6 @@ package Routes
 import (
 	"RMS/handlers/Restaurant"
 	"RMS/handlers/auth"
-	"RMS/handlers/booking"
-
 	"github.com/gorilla/mux"
 )
 
@@ -33,9 +31,5 @@ func InitRoutes() *mux.Router {
 	subadmin.HandleFunc("/api/v1/create-restaurant", restaurant.CreateRestaurantBySubAdmin()).Methods("POST")
 	subadmin.HandleFunc("/api/v1/addMenuBySubAdmin/{restaurant_id}", restaurant.AddMenuBySubadmin()).Methods("POST")
 	subadmin.HandleFunc("/api/v1/auth/user/registerBySubAdmin", auth.CreateUserBySubAdmin()).Methods("POST")
-
-	user := router.PathPrefix("/api/v1/user").Subrouter()
-	user.HandleFunc("/orders/place", booking.PlaceOrderHandler()).Methods("POST")
-
 	return router
 }

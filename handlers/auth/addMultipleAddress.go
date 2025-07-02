@@ -2,6 +2,7 @@ package auth
 
 import (
 	"RMS/db"
+	"RMS/db/dbHelper"
 	"RMS/models"
 	"RMS/utils"
 	"encoding/json"
@@ -35,63 +36,20 @@ func AddSingleAddress() http.HandlerFunc {
 			http.Error(w, "forbidden: user ID mismatch", http.StatusForbidden)
 			return
 		}
-		var req models.AddAddressRequest
+		var req models.AddNewAddressRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "invalid request body", http.StatusBadRequest)
 			return
 		}
-		//transaction
+		req.UserId = claims.UserID
 		tx, err := db.RM.Begin()
-		if err != nil {
-			http.Error(w, "DB transaction error", http.StatusInternalServerError)
-			return
-		}
-		defer func() {
-			if err != nil {
-				_ = tx.Rollback()
-			}
-		}()
-
-		if req.IsPrimary {
-			_, err = tx.Exec(`UPDATE addresses SET is_primary = false WHERE user_id = $1`, pathUserID)
-			if err != nil {
-				http.Error(w, "failed to unset other primary addresses", http.StatusInternalServerError)
-				return
-			}
-		}
-		var exists bool
-		err = tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM addresses WHERE user_id = $1 AND label = $2)`, pathUserID, req.Label).Scan(&exists)
-		if err != nil {
-			http.Error(w, "failed to check existing address", http.StatusInternalServerError)
-			return
-		}
-		if exists {
-			_, err = tx.Exec(`
-				UPDATE addresses
-				SET address_line = $1, city = $2, latitude = $3, longitude = $4, is_primary = $5
-				WHERE user_id = $6 AND label = $7
-			`,
-				req.AddressLine, req.City, req.Latitude, req.Longitude, req.IsPrimary, pathUserID, req.Label,
-			)
-		} else {
-			// Insert
-			_, err = tx.Exec(`
-				INSERT INTO addresses (user_id, label, address_line, city, latitude, longitude, is_primary)
-				VALUES ($1, $2, $3, $4, $5, $6, $7)
-			`,
-				pathUserID, req.Label, req.AddressLine, req.City, req.Latitude, req.Longitude, req.IsPrimary,
-			)
-		}
-		if err != nil {
-			http.Error(w, "failed to upsert address: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
+		defer utils.Tx(tx, &err)
+		err = dbHelper.AddNewAddress(tx, &req, w)
 		if err = tx.Commit(); err != nil {
-			http.Error(w, "DB commit error", http.StatusInternalServerError)
+			http.Error(w, "failed to complete registration", http.StatusInternalServerError)
 			return
 		}
 		resp := map[string]interface{}{
-			"message":          "Address added or updated successfully",
 			"response_time_ms": float64(time.Since(start).Microseconds()) / 1000.0,
 		}
 		w.Header().Set("Content-Type", "application/json")

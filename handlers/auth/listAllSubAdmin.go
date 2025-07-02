@@ -1,11 +1,11 @@
 package auth
 
 import (
-	"RMS/db"
+	"RMS/db/dbHelper"
 	"RMS/models"
 	"RMS/utils"
 	"encoding/json"
-	"log"
+
 	"net/http"
 )
 
@@ -17,38 +17,13 @@ func GetAllSubAdmins() http.HandlerFunc {
 			http.Error(w, "Unauthorized access, only admin can acess", http.StatusUnauthorized)
 			return
 		}
-
-		rows, err := db.RM.Query(`
-			         SELECT 
-                     u.id, 
-                     u.name, 
-                     u.email, 
-                     a.city
-             FROM users u
-             JOIN user_roles ur ON u.id = ur.user_id
-             JOIN addresses a ON u.id = a.user_id AND a.is_primary = true
-        WHERE ur.role = 'sub-admin';
-		`)
+		users, err := dbHelper.GetAllSubAdmin(w)
 		if err != nil {
-			log.Println("Failed to query subadmins:", err)
-			http.Error(w, "Failed to fetch subadmins", http.StatusInternalServerError)
+			http.Error(w, "Failed to fetch sub-admins", http.StatusInternalServerError)
 			return
 		}
-		defer rows.Close()
-
-		var users []models.UserBrief
-		for rows.Next() {
-			var u models.UserBrief
-			if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.City); err != nil {
-
-				continue
-			}
-			users = append(users, u)
-		}
-
-		resp := models.GetAllSubAdminsResponse{
-			Message: "Sub-admins fetched successfully",
-			Users:   users,
+		resp := models.GetAllUsersResponse{
+			Users2: users,
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(resp)

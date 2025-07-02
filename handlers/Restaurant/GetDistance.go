@@ -1,9 +1,9 @@
 package restaurant
 
 import (
+	"RMS/db"
 	"RMS/models"
 	"RMS/utils"
-	"database/sql"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -33,7 +33,7 @@ func GetDistanceToRestaurant() http.HandlerFunc {
 		}
 
 		var userLat, userLng float64
-		err = db.QueryRow(`
+		err = db.RM.QueryRow(`
 			SELECT latitude, longitude 
 			FROM addresses 
 			WHERE user_id = $1 AND is_primary = true AND label != 'shop'
@@ -45,7 +45,7 @@ func GetDistanceToRestaurant() http.HandlerFunc {
 		}
 		var restLat, restLng float64
 		var restName, restCity string
-		err = db.QueryRow(`
+		err = db.RM.QueryRow(`
 			SELECT latitude, longitude, name, city 
 			FROM restaurants 
 			WHERE id = $1

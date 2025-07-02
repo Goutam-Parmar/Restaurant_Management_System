@@ -7,27 +7,18 @@ type RegisteredUser struct {
 	Role  string `json:"role"`
 }
 type RegisterResponse struct {
-	Message        string         `json:"message"`
 	User           RegisteredUser `json:"user"`
 	AccessToken    string         `json:"access_token"`
 	RefreshToken   string         `json:"refresh_token"`
 	ResponseTimeMs float64        `json:"response_time_ms"`
 }
-type LoginUser struct {
-	ID    int64  `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Role  string `json:"role"`
-}
 type LoginResponse struct {
-	Message        string    `json:"message"`
-	User           LoginUser `json:"user"`
-	AccessToken    string    `json:"access_token"`
-	RefreshToken   string    `json:"refresh_token"`
-	ResponseTimeMs float64   `json:"response_time_ms"`
+	Message        string  `json:"message"`
+	AccessToken    string  `json:"access_token"`
+	RefreshToken   string  `json:"refresh_token"`
+	ResponseTimeMs float64 `json:"response_time_ms"`
 }
 type RefreshResponse struct {
-	Message        string  `json:"message"`
 	AccessToken    string  `json:"access_token"`
 	RefreshToken   string  `json:"refresh_token"`
 	ResponseTimeMs float64 `json:"response_time_ms"`
@@ -110,9 +101,9 @@ type RestaurantDistanceResponse struct {
 	ResponseTimeMs float64           `json:"response_time_ms"`
 }
 type CreateUserResponse struct {
-	Message        string  `json:"message"`
-	UserID         int64   `json:"user_id"`
+	UserId         int64   `json:"user_id"`
 	Email          string  `json:"email"`
+	Role           string  `json:"role"`
 	ResponseTimeMs float64 `json:"response_time_ms"`
 }
 type UserBrief struct {
@@ -140,7 +131,6 @@ type UserBrief2 struct {
 }
 
 type GetAllUsersResponse struct {
-	Message        string       `json:"message"`
 	Users2         []UserBrief2 `json:"users"`
 	ResponseTimeMs float64      `json:"response_time_ms"`
 }

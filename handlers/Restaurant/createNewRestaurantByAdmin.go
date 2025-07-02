@@ -1,10 +1,10 @@
 package restaurant
 
 import (
+	"RMS/db"
 	"RMS/models"
 	"RMS/utils"
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"io"
 	"log"
@@ -47,7 +47,7 @@ func CreateRestaurantByAdmin() http.HandlerFunc {
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	RETURNING id
 `
-		err = db.QueryRow(query,
+		err = db.RM.QueryRow(query,
 			req.Name,
 			req.Address,
 			req.City,

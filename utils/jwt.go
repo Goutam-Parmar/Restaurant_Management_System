@@ -10,9 +10,9 @@ import (
 
 var jwtKey = []byte(os.Getenv("JWT_SECRET"))
 
-func GenerateAccessToken(userID int64, email, role string) (string, error) {
+func GenerateAccessToken(userId int64, email, role string) (string, error) {
 	claims := jwt.MapClaims{
-		"user_id": userID,
+		"user_id": userId,
 		"email":   email,
 		"role":    role,
 		"type":    "access",

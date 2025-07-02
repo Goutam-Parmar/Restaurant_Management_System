@@ -2,6 +2,7 @@ package restaurant
 
 import (
 	"RMS/db"
+	"RMS/db/dbHelper"
 	"RMS/models"
 	"RMS/utils"
 	"encoding/json"
@@ -32,28 +33,7 @@ func CreateRestaurantBySubAdmin() http.HandlerFunc {
 			http.Error(w, "forbidden: Only sub-admins can create restaurants here", http.StatusForbidden)
 			return
 		}
-
-		var restaurantID int64
-		query := `
-			INSERT INTO restaurants (name, address, city, latitude, longitude, rating, is_active, created_by)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-			RETURNING id
-		`
-		err = db.RM.QueryRow(query,
-			req.Name,
-			req.Address,
-			req.City,
-			req.Latitude,
-			req.Longitude,
-			req.Rating,
-			true,
-			claims.UserID,
-		).Scan(&restaurantID)
-		if err != nil {
-			http.Error(w, "failed to create restaurant", http.StatusInternalServerError)
-			log.Println("insert error:", err)
-			return
-		}
+		err := dbHelper.CreateRestaurantBySubAdmin()
 
 		resp := models.CreateRestaurantResponse{
 			Message: "restaurant created by sub-admin successfully",

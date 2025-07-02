@@ -1,16 +1,13 @@
 package auth
 
 import (
-	"RMS/db"
+	"RMS/db/dbHelper"
 	"RMS/models"
 	"RMS/utils"
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 	"time"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 func Login() http.HandlerFunc {
@@ -26,48 +23,22 @@ func Login() http.HandlerFunc {
 			http.Error(w, "email and password are required", http.StatusBadRequest)
 			return
 		}
-		var userID int64
-		var name, hashedPassword, role string
-		err := db.RM.QueryRow(`
-			SELECT u.id, u.name, u.password, ur.role
-			FROM users u
-			JOIN user_roles ur ON u.id = ur.user_id
-			WHERE u.email = $1
-			LIMIT 1
-		`, req.Email).Scan(&userID, &name, &hashedPassword, &role)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, "invalid email or password", http.StatusUnauthorized)
-			return
-		}
-		if err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(req.Password)); err != nil {
-			http.Error(w, "invalid email or password", http.StatusUnauthorized)
-			return
-		}
-		accessToken, err := utils.GenerateAccessToken(userID, req.Email, role)
+		err := dbHelper.CheckLoginCredentials(&req, w)
+		accessToken, err := utils.GenerateAccessToken(req.UserId, req.Email, req.Role)
 		if err != nil {
 			http.Error(w, "failed to generate access token", http.StatusInternalServerError)
 			return
 		}
-		refreshToken, err := utils.GenerateRefreshToken(userID, req.Email, role)
+		refreshToken, err := utils.GenerateRefreshToken(req.UserId, req.Email, req.Role)
 		if err != nil {
 			http.Error(w, "failed to generate refresh token", http.StatusInternalServerError)
 			return
 		}
 		resp := models.LoginResponse{
-			Message:      "Login successful",
-			AccessToken:  accessToken,
-			RefreshToken: refreshToken,
-			User: models.LoginUser{
-				ID:    userID,
-				Name:  name,
-				Email: req.Email,
-				Role:  role,
-			},
+			AccessToken:    accessToken,
+			RefreshToken:   refreshToken,
 			ResponseTimeMs: float64(time.Since(start).Microseconds()) / 1000.0,
 		}
-
-		// Send response
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(resp)
 

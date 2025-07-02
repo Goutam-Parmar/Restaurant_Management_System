@@ -2,6 +2,7 @@ package auth
 
 import (
 	"RMS/db"
+	"RMS/db/dbHelper"
 	"RMS/models"
 	"RMS/utils"
 	"encoding/json"
@@ -24,7 +25,7 @@ func CreateUserBySubAdmin() http.HandlerFunc {
 			http.Error(w, "unauthorized: only sub-admins can create users", http.StatusUnauthorized)
 			return
 		}
-		var req models.RegisterRequest
+		var req models.RegisterRequestDB
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "invalid request body", http.StatusBadRequest)
 			return
@@ -37,6 +38,8 @@ func CreateUserBySubAdmin() http.HandlerFunc {
 		req.Label = strings.TrimSpace(req.Label)
 		req.AddressLine = strings.TrimSpace(req.AddressLine)
 		req.City = strings.TrimSpace(req.City)
+
+		req.CreatedBy = claims.UserID
 
 		if req.Name == "" || req.Email == "" || req.Password == "" || req.Phone == "" ||
 			req.Role == "" || req.Label == "" || req.AddressLine == "" || req.City == "" {
@@ -57,75 +60,29 @@ func CreateUserBySubAdmin() http.HandlerFunc {
 			http.Error(w, "invalid address label", http.StatusBadRequest)
 			return
 		}
+		//pasword
+		hashedPassword, hashErr := bcrypt.GenerateFromPassword([]byte(req.Password), 10)
+		if hashErr != nil {
+			http.Error(w, "password hash error", http.StatusBadRequest)
+			return
+		}
+		req.Password = string(hashedPassword)
 
-		// Begin transaction
 		tx, err := db.RM.Begin()
-		if err != nil {
-			http.Error(w, "DB transaction error", http.StatusInternalServerError)
-			return
-		}
-		defer func() {
-			if err != nil {
-				_ = tx.Rollback()
-			}
-		}()
+		defer utils.Tx(tx, &err)
+		err = dbHelper.SearchEmail(tx, &req, w)
+		err = dbHelper.SearchPhone(tx, &req, w)
 
-		var exists bool
-		err = tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, req.Email).Scan(&exists)
-		if err != nil {
-			http.Error(w, "DB check error", http.StatusInternalServerError)
-			return
-		}
-		if exists {
-			http.Error(w, "Email already exists", http.StatusConflict)
-			return
-		}
+		err = dbHelper.RegisterUser(tx, &req)
 
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-		if err != nil {
-			http.Error(w, "Password hash failed", http.StatusInternalServerError)
-			return
-		}
-
-		var userID int64
-		err = tx.QueryRow(`
-			INSERT INTO users (name, email, password, phone, created_by)
-			VALUES ($1, $2, $3, $4, $5)
-			RETURNING id
-		`, req.Name, req.Email, string(hashedPassword), req.Phone, claims.UserID).Scan(&userID)
-		if err != nil {
-			http.Error(w, "failed to insert user", http.StatusInternalServerError)
-			return
-		}
-
-		_, err = tx.Exec(`
-			INSERT INTO user_roles (user_id, role)
-			VALUES ($1, $2)
-		`, userID, req.Role)
-		if err != nil {
-			http.Error(w, "failed to assign role", http.StatusInternalServerError)
-			return
-		}
-
-		_, err = tx.Exec(`
-			INSERT INTO addresses (user_id, label, address_line, city, latitude, longitude, is_primary)
-			VALUES ($1, $2, $3, $4, $5, $6, true)
-		`, userID, req.Label, req.AddressLine, req.City, req.Latitude, req.Longitude)
-		if err != nil {
-			http.Error(w, "failed to insert address", http.StatusInternalServerError)
-			return
-		}
-
-		// Commit transaction
 		if err = tx.Commit(); err != nil {
-			http.Error(w, "commit failed", http.StatusInternalServerError)
+			http.Error(w, "failed to complete registration", http.StatusInternalServerError)
 			return
 		}
-
 		resp := models.CreateUserResponse{
-			Message:        "User created successfully by sub-admin",
-			UserID:         userID,
+			UserId:         req.UserId,
 			Email:          req.Email,
+			Role:           req.Role,
 			ResponseTimeMs: float64(time.Since(start).Microseconds()) / 1000.0,
 		}
 

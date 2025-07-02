@@ -2,6 +2,7 @@ package restaurant
 
 import (
 	"RMS/db"
+	"RMS/db/dbHelper"
 	"RMS/models"
 	"RMS/utils"
 	"encoding/json"
@@ -16,7 +17,6 @@ import (
 func AddMenuByAdmin() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-
 		vars := mux.Vars(r)
 		restaurantIDStr := vars["restaurant_id"]
 		restaurantID, err := strconv.ParseInt(restaurantIDStr, 10, 64)
@@ -41,19 +41,17 @@ func AddMenuByAdmin() http.HandlerFunc {
 			return
 		}
 
-		var restaurantExists bool
-		err = db.RM.QueryRow(`SELECT EXISTS(SELECT 1 FROM restaurants WHERE id = $1)`, restaurantID).Scan(&restaurantExists)
-		if err != nil || !restaurantExists {
-			http.Error(w, "restaurant does not exist", http.StatusBadRequest)
+		err = dbHelper.CheckRestaurant(restaurantID, w)
+
+		if err != nil {
+			log.Println("failed to check restaurant:", err)
 			return
 		}
 
 		// Validate user exists
-		var userExists bool
-		err = db.RM.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)`, userID).Scan(&userExists)
-		if err != nil || !userExists {
-			http.Error(w, "invalid user", http.StatusBadRequest)
-			return
+		err = dbHelper.CheckUserExsist(userID, w)
+		if err != nil {
+			log.Println("failed to check user:", err)
 		}
 
 		// Prepare for insertion
@@ -133,6 +131,7 @@ func AddMenuByAdmin() http.HandlerFunc {
 			})
 		}
 
+		//
 		resp := models.AddMenuResponse{
 			Message:        "Menus added successfully",
 			Menus:          addedMenus,
