@@ -13,7 +13,6 @@ type RegisterResponse struct {
 	ResponseTimeMs float64        `json:"response_time_ms"`
 }
 type LoginResponse struct {
-	Message        string  `json:"message"`
 	AccessToken    string  `json:"access_token"`
 	RefreshToken   string  `json:"refresh_token"`
 	ResponseTimeMs float64 `json:"response_time_ms"`
@@ -36,7 +35,6 @@ type CreatedRestaurant struct {
 	CreatedBy int64   `json:"created_by"`
 }
 type CreateRestaurantResponse struct {
-	Message        string            `json:"message"`
 	Restaurant     CreatedRestaurant `json:"restaurant"`
 	ResponseTimeMs float64           `json:"response_time_ms"`
 }
@@ -52,11 +50,6 @@ type AddedMenu struct {
 	CreatedBy    int64   `json:"created_by"`
 }
 
-type AddMenuResponse struct {
-	Message        string      `json:"message"`
-	Menus          []AddedMenu `json:"menus"`
-	ResponseTimeMs float64     `json:"response_time_ms"`
-}
 type SlimRestaurantResponse struct {
 	ID       int64   `json:"id"`
 	Name     string  `json:"name"`
@@ -131,8 +124,7 @@ type UserBrief2 struct {
 }
 
 type GetAllUsersResponse struct {
-	Users2         []UserBrief2 `json:"users"`
-	ResponseTimeMs float64      `json:"response_time_ms"`
+	Users2 []UserBrief2 `json:"users"`
 }
 type PlaceOrderResponse struct {
 	Message        string  `json:"message"`

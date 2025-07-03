@@ -2,87 +2,91 @@ package restaurant
 
 import (
 	"RMS/db"
+	"RMS/db/dbHelper"
 	"RMS/models"
 	"RMS/utils"
 	"encoding/json"
-	"github.com/gorilla/mux"
+
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 )
 
-func AddMenuBySubadmin() http.HandlerFunc {
+func CreateUserBySubAdmin() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		//Extract restaurant_id
-		params := mux.Vars(r)
-		restaurantIDStr := params["restaurant_id"]
-		restaurantID, err := strconv.ParseInt(restaurantIDStr, 10, 64)
-		if err != nil {
-			http.Error(w, "Invalid restaurant ID", http.StatusBadRequest)
-			return
-		}
-
 		claims, err := utils.ExtractAuthClaims(r.Header.Get("Authorization"))
 		if err != nil {
-			http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
+			http.Error(w, "unauthorized: invalid token", http.StatusUnauthorized)
 			return
 		}
 		if claims.Role != "sub-admin" {
-			http.Error(w, "Unauthorized: only sub-admins can add menus", http.StatusForbidden)
+			http.Error(w, "unauthorized: only sub-admins can create users", http.StatusUnauthorized)
 			return
 		}
-
-		var count int
-		err = db.RM.QueryRow(`
-			SELECT COUNT(1) 
-			FROM restaurants 
-			WHERE id = $1 AND created_by = $2
-		`, restaurantID, claims.UserID).Scan(&count)
-		if err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
-		if count == 0 {
-			http.Error(w, "You are not allowed to modify this restaurant, you can only add menu which restorant belong to you", http.StatusForbidden)
-			return
-		}
-
-		var req models.AddMenuRequest
+		var req models.RegisterRequestDB
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			http.Error(w, "invalid request body", http.StatusBadRequest)
+			return
+		}
+		req.Name = strings.TrimSpace(req.Name)
+		req.Email = strings.ToLower(strings.TrimSpace(req.Email))
+		req.Password = strings.TrimSpace(req.Password)
+		req.Phone = strings.TrimSpace(req.Phone)
+		req.Role = strings.TrimSpace(req.Role)
+		req.Label = strings.TrimSpace(req.Label)
+		req.AddressLine = strings.TrimSpace(req.AddressLine)
+		req.City = strings.TrimSpace(req.City)
+
+		req.CreatedBy = claims.UserID
+
+		if req.Name == "" || req.Email == "" || req.Password == "" || req.Phone == "" ||
+			req.Role == "" || req.Label == "" || req.AddressLine == "" || req.City == "" {
+			http.Error(w, "required fields are missing", http.StatusBadRequest)
+			return
+		}
+		if len(req.Phone) != 10 {
+			http.Error(w, "phone number must be 10 digits", http.StatusBadRequest)
+			return
+		}
+		if req.Role == "admin" || req.Role == "sub-admin" {
+			http.Error(w, "unauthorized: sub-admins can only create users", http.StatusUnauthorized)
 			return
 		}
 
-		var menuID int64
-		query := `
-			INSERT INTO menus (name, description, price, is_available, food_type, category, restaurant_id, created_by)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-			RETURNING id
-		`
-		err = db.RM.QueryRow(query,
-			req.Name,
-			req.Description,
-			req.Price,
-			true,
-			strings.ToLower(req.FoodType),
-			strings.ToLower(req.Category),
-			restaurantID,
-			claims.UserID,
-		).Scan(&menuID)
-		if err != nil {
-			http.Error(w, "Failed to add menu", http.StatusInternalServerError)
+		validLabels := map[string]bool{"home": true, "office": true, "gym": true, "other": true, "shop": true}
+		if !validLabels[strings.ToLower(req.Label)] {
+			http.Error(w, "invalid address label", http.StatusBadRequest)
 			return
 		}
+		//pasword
+		hashedPassword, hashErr := bcrypt.GenerateFromPassword([]byte(req.Password), 10)
+		if hashErr != nil {
+			http.Error(w, "password hash error", http.StatusBadRequest)
+			return
+		}
+		req.Password = string(hashedPassword)
 
-		resp := models.AddMenuResponseSubAdmin{
-			Message:        "Menu added successfully",
-			MenuID:         menuID,
+		tx, err := db.RM.Begin()
+		defer utils.Tx(tx, &err)
+		err = dbHelper.SearchEmail(tx, &req, w)
+		err = dbHelper.SearchPhone(tx, &req, w)
+
+		err = dbHelper.RegisterUser(tx, &req)
+
+		if err = tx.Commit(); err != nil {
+			http.Error(w, "failed to complete registration", http.StatusInternalServerError)
+			return
+		}
+		resp := models.CreateUserResponse{
+			UserId:         req.UserId,
+			Email:          req.Email,
+			Role:           req.Role,
 			ResponseTimeMs: float64(time.Since(start).Microseconds()) / 1000.0,
 		}
+
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(resp)
 	}
 }

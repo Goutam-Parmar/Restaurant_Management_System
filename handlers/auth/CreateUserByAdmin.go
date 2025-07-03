@@ -28,6 +28,11 @@ func RegisterNewUser() http.HandlerFunc {
 		}
 		var req models.RegisterRequestDB
 		req.CreatedBy = authClaims.UserID
+
+		if authClaims.Role != "admin" {
+			http.Error(w, "this is api for admin", http.StatusUnauthorized)
+			return
+		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "invalid payload", http.StatusBadRequest)
 			return
@@ -53,6 +58,7 @@ func RegisterNewUser() http.HandlerFunc {
 			http.Error(w, "only admin can create sub-admins", http.StatusForbidden)
 			return
 		}
+
 		validLabels := map[string]bool{
 			"home":   true,
 			"office": true,

@@ -24,6 +24,10 @@ func Login() http.HandlerFunc {
 			return
 		}
 		err := dbHelper.CheckLoginCredentials(&req, w)
+		if err != nil {
+			http.Error(w, "invalid email or password", http.StatusBadRequest)
+			return
+		}
 		accessToken, err := utils.GenerateAccessToken(req.UserId, req.Email, req.Role)
 		if err != nil {
 			http.Error(w, "failed to generate access token", http.StatusInternalServerError)

@@ -34,29 +34,22 @@ func GenerateRefreshToken(userID int64, email, role string) (string, error) {
 	return token.SignedString(jwtKey)
 }
 func ParseToken(tokenString string) (*jwt.Token, jwt.MapClaims, error) {
-	log.Println("Starting token parse step 5")
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
-		log.Println("checking signing method...")
 
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			log.Printf("invalid signing method: %v\n", t.Header["alg"])
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
-		log.Println("signing method verified")
 		return jwtKey, nil
 	})
 	if err != nil {
 		log.Printf("failed to parse token: %v\n", err)
 		return nil, nil, err
 	}
-
-	log.Println("token parsed successfully")
 	return token, claims, nil
 }
 
 func IsTokenType(claims jwt.MapClaims, expectedType string) bool {
-	log.Println("IsTokenType step 6 ")
 	if typ, ok := claims["type"].(string); ok {
 		return typ == expectedType
 	}

@@ -1,7 +1,7 @@
 package restaurant
 
 import (
-	"RMS/db"
+	"RMS/db/dbHelper"
 	"RMS/models"
 	"RMS/utils"
 	"bytes"
@@ -18,7 +18,6 @@ func CreateRestaurantByAdmin() http.HandlerFunc {
 		var req models.CreateRestaurantRequest
 
 		body, _ := io.ReadAll(r.Body)
-		log.Println("Raw Request Body:", string(body))
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -41,30 +40,8 @@ func CreateRestaurantByAdmin() http.HandlerFunc {
 			return
 		}
 
-		var restaurantID int64
-		query := `
-	INSERT INTO restaurants (name, address, city, latitude, longitude, rating, is_active, created_by)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-	RETURNING id
-`
-		err = db.RM.QueryRow(query,
-			req.Name,
-			req.Address,
-			req.City,
-			req.Latitude,
-			req.Longitude,
-			req.Rating,
-			true,
-			claims.UserID,
-		).Scan(&restaurantID)
-
-		if err != nil {
-			http.Error(w, "Failed to create restaurant", http.StatusInternalServerError)
-			return
-		}
-
+		restaurantID, err := dbHelper.InsertRestaurant(req, claims.UserID, w)
 		resp := models.CreateRestaurantResponse{
-			Message: "Restaurant created successfully",
 			Restaurant: models.CreatedRestaurant{
 				ID:        restaurantID,
 				Name:      req.Name,

@@ -30,7 +30,7 @@ func main() {
 		Handler: router,
 	}
 
-	//  goroutine for faster
+	//  goroutine for faster and also it didnt block main thread , now main thread can do other task
 	go func() {
 		fmt.Println("Server running at http://localhost:8081")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -38,6 +38,7 @@ func main() {
 		}
 	}()
 
+	//concurrency achieved
 	//  listen signal
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)

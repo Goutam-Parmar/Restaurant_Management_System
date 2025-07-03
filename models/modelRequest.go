@@ -1,17 +1,5 @@
 package models
 
-type RegisterRequest struct {
-	Name        string  `json:"name"`
-	Email       string  `json:"email"`
-	Password    string  `json:"password"`
-	Phone       string  `json:"phone"`
-	Role        string  `json:"role"`
-	Label       string  `json:"label"`
-	AddressLine string  `json:"address_line"`
-	City        string  `json:"city"`
-	Latitude    float64 `json:"latitude"`
-	Longitude   float64 `json:"longitude"`
-}
 type RegisterRequestDB struct {
 	UserId      int64   `json:"user_id"`
 	Name        string  `json:"name"`
@@ -63,11 +51,4 @@ type AddNewAddressRequest struct {
 type OrderItemRequest struct {
 	MenuID   int64 `json:"menu_id" validate:"required"`
 	Quantity int   `json:"quantity" validate:"required,gt=0"`
-}
-
-type PlaceOrderRequest struct {
-	RestaurantID  int64              `json:"restaurant_id" validate:"required"`
-	AddressID     int64              `json:"address_id" validate:"required"`
-	Items         []OrderItemRequest `json:"items" validate:"required,dive"`
-	PaymentMethod string             `json:"payment_method"`
 }
